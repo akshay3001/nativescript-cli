@@ -187,13 +187,25 @@ export class PlatformService extends EventEmitter implements IPlatformService {
 		return _.filter(this.$platformsData.platformsNames, p => { return this.isPlatformPrepared(p, projectData); });
 	}
 
-	public async preparePlatform(platformInfo: IPreparePlatformInfo): Promise<boolean> {
-		const platformData = this.$platformsData.getPlatformData(platformInfo.platform, platformInfo.projectData);
-
-		const changesInfo = await this.initialPrepare(platformInfo.platform, platformData, platformInfo.appFilesUpdaterOptions, platformInfo.platformTemplate, platformInfo.projectData, platformInfo.config, platformInfo.nativePrepare, platformInfo);
+	@helpers.hook('shouldPrepare')
+	public async shouldPrepare(platformInfo: IPreparePlatformInfo, changesInfo?: IProjectChangesInfo): Promise<boolean> {
+		changesInfo = changesInfo || await this.getChangesInfo(platformInfo);
 		const requiresNativePrepare = (!platformInfo.nativePrepare || !platformInfo.nativePrepare.skipNativePrepare) && changesInfo.nativePlatformStatus === constants.NativePlatformStatus.requiresPrepare;
 
-		if (changesInfo.hasChanges || requiresNativePrepare) {
+		return changesInfo.hasChanges || requiresNativePrepare;
+	}
+
+	private async getChangesInfo(platformInfo: IPreparePlatformInfo): Promise<IProjectChangesInfo> {
+		const platformData = this.$platformsData.getPlatformData(platformInfo.platform, platformInfo.projectData);
+
+		return this.initialPrepare(platformInfo.platform, platformData, platformInfo.appFilesUpdaterOptions, platformInfo.platformTemplate, platformInfo.projectData, platformInfo.config, platformInfo.nativePrepare, platformInfo);
+	}
+
+	public async preparePlatform(platformInfo: IPreparePlatformInfo): Promise<boolean> {
+		const changesInfo = await this.getChangesInfo(platformInfo);
+		const shouldPrepare = await this.shouldPrepare(platformInfo, changesInfo);
+
+		if (shouldPrepare) {
 			// Always clear up the app directory in platforms if `--bundle` value has changed in between builds or is passed in general
 			// this is done as user has full control over what goes in platforms when `--bundle` is passed
 			// and we may end up with duplicate symbols which would fail the build

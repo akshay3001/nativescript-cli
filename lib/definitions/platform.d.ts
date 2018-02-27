@@ -79,6 +79,14 @@ interface IPlatformService extends NodeJS.EventEmitter {
 	shouldInstall(device: Mobile.IDevice, projectData: IProjectData, outputPath?: string): Promise<boolean>;
 
 	/**
+	 * Determines whether the project should undergo the prepare process.
+	 * @param {IPreparePlatformInfo} platformInfo Options to control the preparation.
+	 * @param {IProjectChangesInfo} @optional changesInfo Info about the current changes in the project.
+	 * @returns {Promise<boolean>} true indicates that the project should be prepared.
+	 */
+	shouldPrepare(platformInfo: IPreparePlatformInfo, changesInfo?: IProjectChangesInfo): Promise<boolean>
+
+	/**
 	 * Installs the application on specified device.
 	 * When finishes, saves .nsbuildinfo in application root folder to indicate the prepare that was used to build the app.
 	 * * .nsbuildinfo is not persisted when building for release.

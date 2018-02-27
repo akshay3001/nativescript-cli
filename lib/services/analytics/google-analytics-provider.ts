@@ -11,6 +11,7 @@ export class GoogleAnalyticsProvider implements IGoogleAnalyticsProvider {
 		private $staticConfig: IStaticConfig,
 		private $analyticsSettingsService: IAnalyticsSettingsService,
 		private $logger: ILogger,
+		private $playgroundService: IPlaygroundService,
 		private $proxyService: IProxyService) {
 	}
 
@@ -46,7 +47,7 @@ export class GoogleAnalyticsProvider implements IGoogleAnalyticsProvider {
 				this.setCrossClientCustomDimensions(visitor, sessionId);
 				break;
 			default:
-				this.setCustomDimensions(visitor, trackInfo.customDimensions, sessionId);
+				await this.setCustomDimensions(visitor, trackInfo.customDimensions, sessionId);
 				break;
 		}
 
@@ -60,7 +61,7 @@ export class GoogleAnalyticsProvider implements IGoogleAnalyticsProvider {
 		}
 	}
 
-	private setCustomDimensions(visitor: ua.Visitor, customDimensions: IStringDictionary, sessionId: string): void {
+	private async setCustomDimensions(visitor: ua.Visitor, customDimensions: IStringDictionary, sessionId: string): Promise<void> {
 		const defaultValues: IStringDictionary = {
 			[GoogleAnalyticsCustomDimensions.cliVersion]: this.$staticConfig.version,
 			[GoogleAnalyticsCustomDimensions.nodeVersion]: process.version,
@@ -69,6 +70,12 @@ export class GoogleAnalyticsProvider implements IGoogleAnalyticsProvider {
 			[GoogleAnalyticsCustomDimensions.sessionID]: sessionId,
 			[GoogleAnalyticsCustomDimensions.client]: AnalyticsClients.Unknown
 		};
+
+		const playgrounInfo = await this.$playgroundService.getPlaygroundInfo();
+		if (playgrounInfo && playgrounInfo.id) {
+			defaultValues[GoogleAnalyticsCustomDimensions.playgroundId] = playgrounInfo.id;
+			defaultValues[GoogleAnalyticsCustomDimensions.usedTutorial] = playgrounInfo.usedTutorial.toString();
+		}
 
 		customDimensions = _.merge(defaultValues, customDimensions);
 

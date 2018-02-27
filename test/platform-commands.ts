@@ -160,6 +160,9 @@ function createTestInjector() {
 			message: (): void => undefined
 		})
 	});
+	testInjector.register("playgroundService", {
+		getPlaygroundInfo: () => Promise.resolve(null)
+	});
 
 	return testInjector;
 }
